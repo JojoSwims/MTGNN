@@ -82,9 +82,18 @@ def main(runid):
     dataloader = load_dataset(args.data, args.batch_size, args.batch_size, args.batch_size)
     scaler = dataloader['scaler']
 
-    predefined_A = load_adj(args.adj_data)
-    predefined_A = torch.tensor(predefined_A)-torch.eye(args.num_nodes)
-    predefined_A = predefined_A.to(device)
+    if args.gcn_true and not args.buildA_true:
+        predefined_A = load_adj(args.adj_data)
+        predefined_A = torch.tensor(predefined_A)
+        if predefined_A.shape[0] != args.num_nodes:
+            raise ValueError(
+                f"Adjacency matrix node count ({predefined_A.shape[0]}) does not match args.num_nodes ({args.num_nodes}). "
+                "Set --buildA_true true to learn the graph adaptively or provide a correctly sized adjacency matrix."
+            )
+        predefined_A = predefined_A - torch.eye(args.num_nodes)
+        predefined_A = predefined_A.to(device)
+    else:
+        predefined_A = None
 
     # if args.load_static_feature:
     #     static_feat = load_node_feature('data/sensor_graph/location.csv')
